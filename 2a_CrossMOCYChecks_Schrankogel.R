@@ -30,6 +30,7 @@ all4 <- as.factor(all4$fl_num)   ### 355 plots
 all94_14_23 <- lutPlots %>% filter (recorded1994 == 1 & recorded2014 == 1 & recorded2023 == 1) %>% droplevels
 all3 <- as.factor(all94_14_23$fl_num)   ### 661 plots
 
+
 #############################
 ### b) Check species occurrence between surveys, especially, when same species from same genus alternating
 ######################################
@@ -77,7 +78,8 @@ write.table(checkSP4_N_G_more, "Check_4surv_species_per_Plot_with_NAs_same_genus
 
 
 ### same with data from 1994_2014_2023
-checkSP3 <- spec %>% select(-5) %>% filter(fl_num %in% all3, year != '2004') %>%  spread(year, cover) %>% droplevels()  %>%  
+checkSP3 <- spec %>% select(-5) %>% filter(fl_num %in% all3, year != '2004') %>%  spread(year, cover) %>% droplevels()  
+checkSP3 <- checkSP3 %>%  
   mutate (no_occ = rowSums(is.na(checkSP3) )) %>% filter (no_occ != 0) 
 
 checkSP3 <- checkSP3 %>% 
@@ -91,7 +93,7 @@ checkSP3_G <- merge (checkSP3 , nG3, all.x = T)
 
 checkSP3_G <- checkSP3_G %>% filter (n>1)      ### 557 rows to check
 
-### add a column wich of the plots are also in all 4
+### add a column which of the plots are also in all 4
 checkSP3_G <- checkSP3_G %>% mutate (inAll4 = ifelse(fl_num %in% all4, 1, 0)) 
 
 write.table(checkSP3_G, "Check_3surv_species_per_Plot_with_NAs_same_genus.csv", sep = ";" , row.names = F)

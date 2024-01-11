@@ -74,7 +74,7 @@ Sp23nr <- merge(spec,Sp23[,c(1,2,3)], by = "species") %>% mutate(year.y = 1) %>%
 Sp23 <- merge(Sp23,Sp23nr , by = "species")
 rm(Sp23nr)
 write.table(Sp23, "NewSpecies2023.csv", sep = ";" , row.names = F)
-
+rm(Sp23)
 # control number of new species
 count(specAllSK,year == 2023) # 11 new species
 
@@ -108,6 +108,7 @@ colnames(SpNrPl23)[4]<- 'veg_cover'
 SpNrPl23$veg_cover = round(SpNrPl23$veg_cover,1)
 write.table(SpNrPl23, "NrSpeciesPlot2023.csv", sep = ";" , row.names = F)
 
+rm(SpNrPl23)
 
 
 ##################################
@@ -135,7 +136,7 @@ write.table(SpNrPl23, "NrSpeciesPlot2023.csv", sep = ";" , row.names = F)
   
   write.table(rare23, "rareSpeciesToCheck2023.csv", sep = ";" , row.names = F) ## check with orig Forms AND photo (when cover is big enough)
 
-
+rm(rarelist, rare23, rare)
   
   # remove plots which were identified as real outliers: use therefor PlotsDes
    ## the following where removed in 2014, because of a hugh stone first time in  in 2014: at the moment they are in with lots of spec.
