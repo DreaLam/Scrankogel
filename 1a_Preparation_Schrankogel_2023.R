@@ -23,8 +23,9 @@ library(tidyverse)
 myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projects/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim.accdb")
 #myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=E:/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim.accdb")
 #myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=X:/projects/SCHRANKOGEL/SCHRANKOGEL2023/Dateneingabe/SCHRAN_1994_to_2023_MicroClim.accdb")
+myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim.accdb")
 
-#or
+
 
 ## via ODBC-Datenquellen-Administrator (64bit)
 ## Benutzer DSN: choose 'MS Access Database', 'Hinzufuegen', choose 'Microsoft Access Driver', Namen for connection (here: "Schrankogel_2023"), Datenbank Auswaehlen, OK, OK
