@@ -30,7 +30,7 @@ all4 <- as.factor(all4$fl_num)   ### 355 plots
 all94_14_23 <- lutPlots %>% filter (recorded1994 == 1 & recorded2014 == 1 & recorded2023 == 1) %>% droplevels
 all3 <- as.factor(all94_14_23$fl_num)   ### 661 plots
 
-
+rm(all94_14_23, all3)
 #############################
 ### b) Check species occurrence between surveys, especially, when same species from same genus alternating
 ######################################
@@ -41,14 +41,14 @@ checkSP4 <- spec %>% select(-5) %>% filter(fl_num %in% all4) %>%  spread(year, c
 str(checkSP4)
 
 
-write.table(checkSP4, "Check_4surv_species_per_Plot.csv", sep = ";" , row.names = F)
+write.table(checkSP4, "../Check_4surv_species_per_Plot.csv", sep = ";" , row.names = F)
 
 
 ## table with species cover per species and plot in every year, when spec not occurred in every year
 checkSP4_N <- checkSP4  %>%  mutate (no_occ = rowSums(is.na(checkSP4) )) %>% filter (no_occ != 0)
 
 
-write.table(checkSP4_N, "Check_4surv_species_per_Plot_with NAs.csv", sep = ";" , row.names = F)
+write.table(checkSP4_N, "../Check_4surv_species_per_Plot_with NAs.csv", sep = ";" , row.names = F)
 
 
 
@@ -72,9 +72,9 @@ nNG <- checkSP4_N_G %>%
 
 checkSP4_N_G <- merge (checkSP4_N_G , nNG, all.x = T)
 
-checkSP4_N_G_more <- checkSP4_N_G %>% filter (n>1)        #### 'only' 228 rows to check
+checkSP4_N_G_more <- checkSP4_N_G %>% filter (n>1)        #### 'only' 191 rows to check
 
-write.table(checkSP4_N_G_more, "Check_4surv_species_per_Plot_with_NAs_same_genus.csv", sep = ";" , row.names = F)
+write.table(checkSP4_N_G_more, "../Check_4surv_species_per_Plot_with_NAs_same_genus.csv", sep = ";" , row.names = F)
 
 
 ### same with data from 1994_2014_2023
@@ -91,14 +91,14 @@ nG3 <- checkSP3 %>%
 
 checkSP3_G <- merge (checkSP3 , nG3, all.x = T)
 
-checkSP3_G <- checkSP3_G %>% filter (n>1)      ### 557 rows to check
+checkSP3_G <- checkSP3_G %>% filter (n>1)      ### 506 rows to check
 
 ### add a column which of the plots are also in all 4
 checkSP3_G <- checkSP3_G %>% mutate (inAll4 = ifelse(fl_num %in% all4, 1, 0)) 
 
-write.table(checkSP3_G, "Check_3surv_species_per_Plot_with_NAs_same_genus.csv", sep = ";" , row.names = F)
+write.table(checkSP3_G, "../Check_3surv_species_per_Plot_with_NAs_same_genus.csv", sep = ";" , row.names = F)
 
 
-
+rm(checkSP3,checkSP3_G,checkSP4,checkSP4_G,checkSP4_G_more,checkSP4_N,checkSP4_N_G,checkSP4_N_G_more,nG, nG3, nNG)
 
 

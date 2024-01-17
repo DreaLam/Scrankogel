@@ -30,6 +30,9 @@ str(Plotinfo)
 
 Plotinfo <- Plotinfo %>% mutate_at(c('fl_num', 'tr', 'block'), as.factor)
 
+Plotinfo <- Plotinfo[,c(1,2,3,5,4)]
+
+
 write.table(Plotinfo, "../Plotinfo.csv", sep = ";" , row.names = F) ## for general information of plots
 
 #############
@@ -64,6 +67,10 @@ PlotYears %>%  count (all3)  ## 661 plots
 diff <- Plotinfo %>% mutate(PlY = ifelse(fl_num %in% levels(PlotYears$fl_num), 'Y', 'N'))
 
 lutPlots %>% filter(fl_num %in% diff[diff$PlY == 'N',]$fl_num)   ### those 3 plots never recorded, therefore delete from Plotinfo
+PlotsNO <- diff[diff$PlY == 'N',]
+write.table(PlotsNO, "../PlotsNO.csv", sep = ";" , row.names = F)
+
+rm(PlotsNO, diff)
 
 ### addition to b) Delete plots never recorded from Plotinfo
 
@@ -75,64 +82,86 @@ write.table(Plotinfo, "../Plotinfo.csv", sep = ";" , row.names = F)
 ########################
 ## d)  prepare SpecInfo (for general information of species): add 'altirank', F (Feuchte?) and lifeform per species
 ##########################
+### all infos now also in Access DB, so included in specAllSK; no need to go through all the steps
 
-SpecInfo <- read.csv( '../Arten_mit_indicator_value.csv', sep = ';')
+   #SpecInfo <- read.csv( '../Arten_mit_indicator_value.csv', sep = ';')
 
-##add missing species
-SpecInfo <- merge(specAllSK[,2:4], SpecInfo, by = 'species', all.x = T)
-## only species really occur
-specList <- levels(spec$species) ### 86 species really occurred in one of the plots at least in one year.
+    ##add missing species
+  #SpecInfo <- merge(specAllSK[,2:4], SpecInfo, by = 'species', all.x = T)
+    ## only species really occur
+  #specList <- levels(spec$species) ### 85 species really occurred in one of the plots at least in one year.
+  # SpecInfo <- SpecInfo %>% filter(species %in% specList)
+
+  #str(specAllSK)
+  #str(SpecInfo)
+
+  #SpecInfo <- SpecInfo %>% mutate_at(c('species'), as.factor)
+
+  #colnames(SpecInfo)[4] <-'alt'  ## for altirank
+  #SpecInfo<- SpecInfo[,1:5]
+  #SpecInfo<- SpecInfo[,-3]  ### remove year, it just shows, when first occurr
+
+  #colnames(SpecInfo)[2] <-'speciesName'
+
+   ##adding missing altiranks plus check others
+  #SpAlti <- read.csv( '../SpeciesAltiranks.csv', sep = ';')
+  #str(SpAlti)
+  #SpAlti$species <- as.factor(SpAlti$species)
+
+  #SpecInfo <- merge(SpecInfo,SpAlti, by = 'species')
+  #SpecInfo <- SpecInfo %>%  mutate (check = ifelse(alt.x %in% alt.y, 'Y', 'N'))    ## OK, all present data where the same, so alt.y can be accepted
+  #SpecInfo <- SpecInfo[,c(1,2,5,4)]
+  #colnames(SpecInfo)[3] <-'alt'
+
+    ## add missing F and lifeforms from Flora indicativa
+  #SpF_LF <- read.csv( '../SpecF_LF.csv', sep = ';')
+  #SpF_LF[SpF_LF$F %in% '03.Mai',]$F <- 3.5   ### xls was doing awful things
+  #SpF_LF[SpF_LF$F %in% '02.Mai',]$F <- 2.5   ### xls was doing awful things
+
+  #SpecInfo <- merge(SpecInfo,SpF_LF[,-c(2,5)], by = 'species')
+  #SpecInfo <- SpecInfo %>% mutate(check = ifelse (F.x %in% F.y, 'Y','N'))   ### F.y more complete, otherwise same
+  #SpecInfo <- SpecInfo[,c(1:3,5,6)]
+  #colnames(SpecInfo)[4]<- 'F'
+
+SpecInfo <- specAllSK
+  specList <- levels(spec$species) ### 85 species really occurred in one of the plots at least in one year.
 SpecInfo <- SpecInfo %>% filter(species %in% specList)
+SpecInfo <-SpecInfo[,-c(1,4)]
 
-str(specAllSK)
+   ## diff of species in specAllSK and SpecInfo
+#diff <- specAllSK %>% mutate(SpY = ifelse(species %in% levels(SpecInfo$species), 'Y', 'N'))
+
+#SpecNO <- specAllSK %>% filter(species %in% diff[diff$SpY == 'N',]$species)   ### those 8 species never recorded, therefore delete from SpecAllSK!
+#write.table(SpecNO, "../SpecNO.csv", sep = ";" , row.names = F)
+
+## remove SpecNO from SpecInfo
+#SpecInfo <- SpecInfo %>% filter(species %in% diff[diff$SpY == 'Y',]$species)
 str(SpecInfo)
-
-SpecInfo <- SpecInfo %>% mutate_at(c('species'), as.factor)
-
-colnames(SpecInfo)[4] <-'alt'  ## for altirank
-SpecInfo<- SpecInfo[,1:5]
-SpecInfo<- SpecInfo[,-3]  ### remove year, it just shows, when first occurr
-
-colnames(SpecInfo)[2] <-'speciesName'
-
-##adding missing altiranks plus check others
-SpAlti <- read.csv( '../SpeciesAltiranks.csv', sep = ';')
-str(SpAlti)
-SpAlti$species <- as.factor(SpAlti$species)
-
-SpecInfo <- merge(SpecInfo,SpAlti, by = 'species')
-SpecInfo <- SpecInfo %>%  mutate (check = ifelse(alt.x %in% alt.y, 'Y', 'N'))    ## OK, all present data where the same, so alt.y can be accepted
-SpecInfo <- SpecInfo[,c(1,2,5,4)]
-colnames(SpecInfo)[3] <-'alt'
-
-## add missing F and lifeforms from Flora indicativa
-SpF_LF <- read.csv( '../SpecF_LF.csv', sep = ';')
-
-SpecInfo <- merge(SpecInfo,SpF_LF[,-c(2,5)], by = 'species')
-SpecInfo <- SpecInfo %>% mutate(check = ifelse (F.x %in% F.y, 'Y','N'))   ### F.y more complete, otherwise same
-SpecInfo <- SpecInfo[,c(1:3,5,6)]
-colnames(SpecInfo)[4]<- 'F'
 
 write.table(SpecInfo, "../SpecInfo.csv", sep = ";" , row.names = F)
 
-
-## diff of species in specAllSK and SpecInfo
-diff <- specAllSK %>% mutate(SpY = ifelse(species %in% levels(SpecInfo$species), 'Y', 'N'))
-
-SpecNO <- specAllSK %>% filter(species %in% diff[diff$SpY == 'N',]$species)   ### those 8 species never recorded, therefore delete from SpecAllSK!
-write.table(SpecNO, "../SpecNO.csv", sep = ";" , row.names = F)
+rm(SpecNO, diff, SpAlti, SpF_LF)
 
 
-
-### Attention: Polygonum viviparum 2 x: POLYVIVI und PERSVIVI!!!
-PolyVivi <- spec %>% filter(species %in% 'POLYVIVI' | species %in% 'PERSVIVI')  ### <2023 PersVivi, 2023 Polyvivi!!!!!
-
-### !! Change also in ACCESS Schrankogel DB!
-
+### Attention: Polygonum viviparum 2 x: POLYVIVI und PERSVIVI!!!    SAVED!!! and corrected in Access DB
+##PolyVivi <- spec %>% filter(species %in% 'POLYVIVI' | species %in% 'PERSVIVI')  ### <2023 PersVivi, 2023 Polyvivi!!!!!
+#rm(PolyVivi)
+### Changed in ACCESS Schrankogel DB!
 
 
+#############
+## check of empty plots
+###########
 
+## in total 824 plots recorded in one of the 4 years. In spec: 808 plots with spec in at least one of the 4 years
+diff <- Plotinfo %>% mutate(flY = ifelse(fl_num %in% levels(spec$fl_num), 'Y', 'N'))
 
+Empty_plot <- Plotinfo %>%  filter(fl_num %in% diff[diff$flY == 'N',]$fl_num)
+
+Empty_plot <- merge (Empty_plot , lutPlots[,c(1,6:9)], by = 'fl_num')   ### checked and confirmed
+write.table(Empty_plot, "../Empty_plots.csv", sep = ";" , row.names = F)
+
+rm(Empty_plot, diff)
 
 
 ### f) Suggestion HP: remove same plots as in 2014 (for Lamprecht etal 2018): "110126" , "110226" , "110227" , "110127"
