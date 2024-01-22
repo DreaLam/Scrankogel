@@ -63,19 +63,21 @@ PlotYears %>%  count (all3)  ## 661 plots
 
 
 
-## why PlotYears and plotinfo not same number of plots?
-diff <- Plotinfo %>% mutate(PlY = ifelse(fl_num %in% levels(PlotYears$fl_num), 'Y', 'N'))
+## before PlotYears and plotinfo not same number of plots. Check again:
+#diff <- Plotinfo %>% mutate(PlY = ifelse(fl_num %in% levels(PlotYears$fl_num), 'Y', 'N'))
+#diff[diff$PlY == 'N',]  ### 0 rows, because already changed in DB
 
-lutPlots %>% filter(fl_num %in% diff[diff$PlY == 'N',]$fl_num)   ### those 3 plots never recorded, therefore delete from Plotinfo
-PlotsNO <- diff[diff$PlY == 'N',]
-write.table(PlotsNO, "../PlotsNO.csv", sep = ";" , row.names = F)
 
-rm(PlotsNO, diff)
+#lutPlots %>% filter(fl_num %in% diff[diff$PlY == 'N',]$fl_num)   ### those 3 plots never recorded, therefore delete from Plotinfo
+#PlotsNO <- diff[diff$PlY == 'N',]
+#write.table(PlotsNO, "../PlotsNO.csv", sep = ";" , row.names = F)
 
-### addition to b) Delete plots never recorded from Plotinfo
+#rm(PlotsNO, diff)
 
-Plotinfo <- Plotinfo %>% filter(fl_num %in% diff[diff$PlY == 'Y',]$fl_num)
-write.table(Plotinfo, "../Plotinfo.csv", sep = ";" , row.names = F)
+### addition to b) Delete plots never recorded from Plotinfo:  already done in Access DB -> new version: v3
+
+#Plotinfo <- Plotinfo %>% filter(fl_num %in% diff[diff$PlY == 'Y',]$fl_num)
+#write.table(Plotinfo, "../Plotinfo.csv", sep = ";" , row.names = F)
 
 
 
@@ -128,13 +130,17 @@ SpecInfo <- specAllSK
 SpecInfo <- SpecInfo %>% filter(species %in% specList)
 SpecInfo <-SpecInfo[,-c(1,4)]
 
+SpecInfo$species <- as.factor(SpecInfo$species)
+specAllSK$species <- as.factor(specAllSK$species)
+
    ## diff of species in specAllSK and SpecInfo
 #diff <- specAllSK %>% mutate(SpY = ifelse(species %in% levels(SpecInfo$species), 'Y', 'N'))
 
 #SpecNO <- specAllSK %>% filter(species %in% diff[diff$SpY == 'N',]$species)   ### those 8 species never recorded, therefore delete from SpecAllSK!
 #write.table(SpecNO, "../SpecNO.csv", sep = ";" , row.names = F)
 
-## remove SpecNO from SpecInfo
+## remove SpecNO from SpecInfo: done in Access DB -> new version: v3
+
 #SpecInfo <- SpecInfo %>% filter(species %in% diff[diff$SpY == 'Y',]$species)
 str(SpecInfo)
 
@@ -163,6 +169,7 @@ write.table(Empty_plot, "../Empty_plots.csv", sep = ";" , row.names = F)
 
 rm(Empty_plot, diff)
 
+rm(lutPlots, plotlist, specAllSK)
 
 ### f) Suggestion HP: remove same plots as in 2014 (for Lamprecht etal 2018): "110126" , "110226" , "110227" , "110127"
 spec <- droplevels(subset(spec , ! fl_num %in% c("110126" , "110226" , "110227" , "110127") & ! tr %in% "12"))

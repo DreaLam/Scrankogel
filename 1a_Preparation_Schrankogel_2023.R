@@ -20,28 +20,21 @@ library(tidyverse)
 ### Access to Access-DB  ;-)#
 #############################
  
-<<<<<<< HEAD
-myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projects/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim.accdb")
-#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=E:/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim.accdb")
-#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=X:/projects/SCHRANKOGEL/SCHRANKOGEL2023/Dateneingabe/SCHRAN_1994_to_2023_MicroClim.accdb")
-myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
-=======
-myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projects/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
-#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=E:/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
-#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=X:/projects/SCHRANKOGEL/SCHRANKOGEL2023/Dateneingabe/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
-#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
->>>>>>> 14ce124ac06dc181cc94fd756a1f7358e724ac75
+
+#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projects/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
+#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=E:/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
+#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=X:/projects/SCHRANKOGEL/SCHRANKOGEL2023/Dateneingabe/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
+myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andrea/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
+
+
 
 
 
 ## via ODBC-Datenquellen-Administrator (64bit)
 ## Benutzer DSN: choose 'MS Access Database', 'Hinzufuegen', choose 'Microsoft Access Driver', Namen for connection (here: "Schrankogel_2023"), Datenbank Auswaehlen, OK, OK
 
-<<<<<<< HEAD
-myconn <-odbcConnect("Schrankogel_2023", uid="", pwd="")
-=======
+
 #myconn <-odbcConnect("Schrankogel_2023", uid="", pwd="")
->>>>>>> 14ce124ac06dc181cc94fd756a1f7358e724ac75
 
 
 specAllSK <- sqlFetch(myconn, "lutSpecies") #opens connection in Access: tab with all species occur on Schrankogel and the year of first occurrence
