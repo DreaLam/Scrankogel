@@ -20,17 +20,28 @@ library(tidyverse)
 ### Access to Access-DB  ;-)#
 #############################
  
+<<<<<<< HEAD
 myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projects/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim.accdb")
 #myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=E:/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim.accdb")
 #myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=X:/projects/SCHRANKOGEL/SCHRANKOGEL2023/Dateneingabe/SCHRAN_1994_to_2023_MicroClim.accdb")
 myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
+=======
+myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projects/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
+#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=E:/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
+#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=X:/projects/SCHRANKOGEL/SCHRANKOGEL2023/Dateneingabe/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
+#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim_v2.accdb")
+>>>>>>> 14ce124ac06dc181cc94fd756a1f7358e724ac75
 
 
 
 ## via ODBC-Datenquellen-Administrator (64bit)
 ## Benutzer DSN: choose 'MS Access Database', 'Hinzufuegen', choose 'Microsoft Access Driver', Namen for connection (here: "Schrankogel_2023"), Datenbank Auswaehlen, OK, OK
 
+<<<<<<< HEAD
 myconn <-odbcConnect("Schrankogel_2023", uid="", pwd="")
+=======
+#myconn <-odbcConnect("Schrankogel_2023", uid="", pwd="")
+>>>>>>> 14ce124ac06dc181cc94fd756a1f7358e724ac75
 
 
 specAllSK <- sqlFetch(myconn, "lutSpecies") #opens connection in Access: tab with all species occur on Schrankogel and the year of first occurrence
@@ -74,10 +85,10 @@ Sp23 <- specAllSK %>% filter(year == 2023) %>% select(species_code:Artname)
 Sp23nr <- merge(spec,Sp23[,c(1,2,3)], by = "species") %>% mutate(year.y = 1) %>% group_by(species) %>% summarize(number = sum(year.y))
 Sp23 <- merge(Sp23,Sp23nr , by = "species")
 rm(Sp23nr)
-write.table(Sp23, "NewSpecies2023.csv", sep = ";" , row.names = F)
+write.table(Sp23, "../NewSpecies2023.csv", sep = ";" , row.names = F)
 rm(Sp23)
 # control number of new species
-count(specAllSK,year == 2023) # 11 new species
+count(specAllSK,year == 2023) # 12 new species
 
 
 #####################################
@@ -107,7 +118,7 @@ SpNrPl23 <- merge(SpNrPl23, plotlist[plotlist$year %in% '2023',c(1,2,19)], by = 
 SpNrPl23[is.na(SpNrPl23)] <- 0
 colnames(SpNrPl23)[4]<- 'veg_cover'
 SpNrPl23$veg_cover = round(SpNrPl23$veg_cover,1)
-write.table(SpNrPl23, "NrSpeciesPlot2023.csv", sep = ";" , row.names = F)
+write.table(SpNrPl23, "../NrSpeciesPlot2023.csv", sep = ";" , row.names = F)
 
 rm(SpNrPl23)
 
@@ -135,7 +146,7 @@ rm(SpNrPl23)
     rare <- rare %>% filter(species == spR ) %>% filter(nr == 1)
     rare23 <- rbind(rare23, rare) }
   
-  write.table(rare23, "rareSpeciesToCheck2023.csv", sep = ";" , row.names = F) ## check with orig Forms AND photo (when cover is big enough)
+  write.table(rare23, "../rareSpeciesToCheck2023.csv", sep = ";" , row.names = F) ## check with orig Forms AND photo (when cover is big enough)
 
 rm(rarelist, rare23, rare)
   
