@@ -173,3 +173,4 @@ rm(lutPlots, plotlist, specAllSK)
 
 ### f) Suggestion HP: remove same plots as in 2014 (for Lamprecht etal 2018): "110126" , "110226" , "110227" , "110127"
 spec <- droplevels(subset(spec , ! fl_num %in% c("110126" , "110226" , "110227" , "110127") & ! tr %in% "12"))
+
