@@ -73,7 +73,16 @@ plotlist$fl_num <- as.factor(plotlist$fl_num)
 ##################################
 
 #new species of 2023
-Sp23 <- specAllSK %>% filter(year == 2023) %>% select(species_code:Artname)
+Sp23 <- specAllSK %>% filter(year == 2023) %>% select(species_code:Artname)  ### Attention. Some are new in 2023, althugh older in that list
+Sp23_new <- spec[,2:4] %>%  group_by(species, year)%>% summarise(cover = sum(cover)) %>% ungroup() %>%  group_by(species) %>% spread( year, cover) %>% ungroup()
+colnames(Sp23_new)[2] <- 'Y1994'
+colnames(Sp23_new)[3] <- 'Y2004'
+colnames(Sp23_new)[4] <- 'Y2014'
+colnames(Sp23_new)[5] <- 'Y2023'
+
+Sp23_new <- Sp23_new %>% mutate(In23 = ifelse(is.na(Y2023) , -50,1), In14 = ifelse(is.na(Y2014) , -50,1),In04 = ifelse(is.na(Y2004) , -50,1),In94 = ifelse(is.na(Y1994) , -50,1) )
+Sp23_new <- Sp23_new %>% filter(In23 > 0) %>%  mutate(new = sum([[6]]:[[9]]))
+
 ## including number of occurrence
 Sp23nr <- merge(spec,Sp23[,c(1,2,3)], by = "species") %>% mutate(year.y = 1) %>% group_by(species) %>% summarize(number = sum(year.y))
 Sp23 <- merge(Sp23,Sp23nr , by = "species")
