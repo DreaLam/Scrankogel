@@ -11,7 +11,7 @@
 
 
 ## e) decide, what happens with annuals (Euphrasia minima, Gentianella tenella)
-## f) decide, which plots should be removed: see PlotsDes (destroyed plots 2023 described here)
+## f) prepare different datasets for dat4 = all 4 years (355plots), dat3 (1994,2014,2023: 661 pots), dat2 (1994, 2023; 683 plots)
 
 
 
@@ -171,6 +171,21 @@ rm(Empty_plot, diff)
 
 rm(lutPlots, plotlist, specAllSK)
 
-### f) Suggestion HP: remove same plots as in 2014 (for Lamprecht etal 2018): "110126" , "110226" , "110227" , "110127"
-spec <- droplevels(subset(spec , ! fl_num %in% c("110126" , "110226" , "110227" , "110127") & ! tr %in% "12"))
+
+
+##################
+# f) Create 3 different datasets: dat4 = all 4 years (355plots), dat3 (1994,2014,2023: 661 pots), dat2 (1994, 2023; 683 plots)
+dat <- PlotinfoYear[,1:2] %>% mutate(occ=1)
+dat <- dat %>% group_by(fl_num) %>% spread(year, occ) %>% ungroup()
+dat4 <- dat %>% filter( rowSums(.[2:5]) == 4)  ### 355 plots
+dat4 <- dat4 %>% mutate(dat4 = 'YES')
+dat4 <- droplevels(dat4)
+
+dat3 <- dat %>% filter( rowSums(.[c(2,4,5)]) == 3) ### 661 plots
+dat3 <- dat3 %>% mutate(dat3 = 'YES')
+dat3 <- droplevels(dat3)
+
+dat2 <- dat %>% filter( rowSums(.[c(2,5)]) == 2) ### 683 plots
+dat2 <- dat2 %>% mutate(dat2 = 'YES')
+dat2 <- droplevels(dat2)
 

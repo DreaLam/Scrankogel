@@ -81,16 +81,21 @@ colnames(Sp23_new)[4] <- 'Y2014'
 colnames(Sp23_new)[5] <- 'Y2023'
 
 Sp23_new <- Sp23_new %>% mutate(In23 = ifelse(is.na(Y2023) , -50,1), In14 = ifelse(is.na(Y2014) , -50,1),In04 = ifelse(is.na(Y2004) , -50,1),In94 = ifelse(is.na(Y1994) , -50,1) )
-Sp23_new <- Sp23_new %>% filter(In23 > 0) %>%  mutate(new = sum([[6]]:[[9]]))
+Sp23_new <- Sp23_new %>% filter(In23 > 0) %>%  mutate(new = rowSums(.[6:9]) )
+Sp23_new <- Sp23_new %>% filter(new %in% -149)
+
+Sp23_new <- Sp23_new[,c(1,5,6)]  ### 15 new species
 
 ## including number of occurrence
-Sp23nr <- merge(spec,Sp23[,c(1,2,3)], by = "species") %>% mutate(year.y = 1) %>% group_by(species) %>% summarize(number = sum(year.y))
-Sp23 <- merge(Sp23,Sp23nr , by = "species")
-rm(Sp23nr)
-write.table(Sp23, "../NewSpecies2023.csv", sep = ";" , row.names = F)
-rm(Sp23)
-# control number of new species
-count(specAllSK,year == 2023) # 12 new species
+Sp23nr <- merge(spec,Sp23_new, by = "species") %>% mutate(year.y = 1) %>% group_by(species) %>% summarize(number = sum(year.y))
+Sp23_new <- merge(Sp23_new,Sp23nr , by = "species")
+colnames(Sp23_new)[2] <- 'cover'
+Sp23_new <- merge(Sp23_new[,-3], SpecInfo[,1:2] , by = "species", all.x = T)
+Sp23_new <- Sp23_new[,c(1,4,3,2)]
+
+
+write.table(Sp23_new, "../NewSpecies2023.csv", sep = ";" , row.names = F)
+rm(Sp23nr, Sp23, Sp23_new)
 
 
 #####################################
