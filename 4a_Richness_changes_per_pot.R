@@ -1,6 +1,13 @@
 #### ANALYSE Richness change per plot ###
+library(stringr)
+library(tidyverse)
 library(plyr)
 library(ggplot2)
+library(Matrix)
+library(lme4)
+library(emmeans)
+library(lsmeans)
+lsmeans <- lsmeans::lsmeans
 
 
 ## A) richness per plot and year
@@ -65,21 +72,43 @@ rm(rich_mean_tr)
 
 
 ### C) Analyses
-histogram( ~ n_spec | year, type = "count" , data=rich4)
-glm_gaus<-glm(rich$n_spec~1)
-glm_pois<-glm(rich$n_spec~1, family = "poisson")
-glm_NB<-glm.nb(rich$n_spec~1)
+hist( rich4$n_spec , xlab= 'year', ylab = 'n_spec' )   ### beautiful GAUSS distribution
+
+rich4 <- rich4 %>% mutate(yearNr = as.numeric(year))
+rich4 <- rich4 %>% mutate(yearNR = as.numeric(paste(year)))
+
+
+### Choose an error distribution and link function (e.g. Poisson distribution and log link for count data).
+glm_gaus<-glm(rich4$n_spec~1)
+glm_pois<-glm(rich4$n_spec~1, family = "poisson")  ## lot of warnings.
+#glm_nb <- glm.nb(rich4$n_spec~1) ## lot of warnings.
+#glm_gamma <- glm(rich4$n_spec~1, family = "Gamma") ## non-positive values not allowed for the 'Gamma' family
+
 # Diagnostics on the NULL models
-par(mfrow=c(2,4))
+par(mfrow=c(3,4))
 plot(glm_gaus, main="gaussian")  
 plot(glm_pois, main="poisson")
-anova(glm_gaus,glm_pois, glm_NB)  
+plot(glm_nb, main="neg.bin")
+AIC(glm_gaus, glm_pois)  ### lower for gauss
 
-AIC(glm_gaus)
-AIC(glm_pois)
-AIC(glm_NB)
+rm(glm_gaus,glm_pois)
 
-rm(glm_gaus,glm_nb,glm_NB, glm_pois)
+rich_Y <- lmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4)
+rich_Y_P <- glmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4, family = poisson())
+anova(rich_Y,rich_Y_P)   ### AIC is lower with gauss
+summary(rich_Y)
+# numeric year
+rich_Yn <- lmer(n_spec ~ yearNr +  (1 |block/tr/fl_num), data = rich4)
+rich_YN <- lmer(n_spec ~ yearNR +  (1 |block/tr/fl_num), data = rich4)
+rich_Y_Pn <- glmer(n_spec ~ yearNr +  (1 |block/tr/fl_num), data = rich4, family = poisson())
+anova(rich_Yn,rich_YN, rich_Y_Pn)   ### AIC is lower with gauss
+summary(rich_Yn)
+summary(rich_YN)
+anova(rich_YN)
+anova(rich_Y)
 
+rich_Y_emmeans <- pairs(emmeans(rich_Y, ~year))
+rich_Y_emmeans<-as.data.frame(rich_Y_emmeans)
+plot(emmeans(rich_Y, ~year), comparisons = TRUE)
 
 

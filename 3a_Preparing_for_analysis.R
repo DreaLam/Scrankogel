@@ -172,6 +172,19 @@ rm(Empty_plot, diff)
 rm(lutPlots, plotlist, specAllSK)
 
 
+########################################
+## e) decide, what happens with annuals (Euphrasia minima, Gentianella tenella)
+##########################
+
+Annual <- spec %>% filter(species == 'EUPHMINI' | species == 'GENTTENE') %>% group_by(year,species)  %>% summarise( n_spec = length(year)) %>% ungroup()
+write.table(Annual, "../Annuals.csv", sep = ";" , row.names = F)
+
+Annual4 <- merge(spec, Plotinfo[,c(1,3)], all.x = T) %>% filter(species == 'EUPHMINI' | species == 'GENTTENE') %>% filter(fl_num %in% levels(dat4$fl_num)) %>% group_by(year,species)  %>% summarise( n_spec = length(year)) %>% ungroup()
+rm(Annual4)
+
+spec_inklAnnuals <- spec  ### to use spec without annuals
+spec <- spec %>% filter(species != 'EUPHMINI') %>% filter(species != 'GENTTENE')
+
 
 ##################
 # f) Create 3 different datasets: dat4 = all 4 years (355plots), dat3 (1994,2014,2023: 661 pots), dat2 (1994, 2023; 683 plots)
@@ -188,4 +201,3 @@ dat3 <- droplevels(dat3)
 dat2 <- dat %>% filter( rowSums(.[c(2,5)]) == 2) ### 683 plots
 dat2 <- dat2 %>% mutate(dat2 = 'YES')
 dat2 <- droplevels(dat2)
-
