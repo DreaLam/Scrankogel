@@ -1,6 +1,8 @@
 
 ## CHECKS BETWEEN DIFFERENT SURVEY YEARS
 
+## Attention: 2a was done before using the final database. Therefore, column names might be changed!
+
 ## a) How many plots were recorded in all 4 years (194, 2004, 2014 and 2023); how many in 1994, 2014 and 2023
 ## b) Check species occurrence between surveys, especially, when same species from same genus alternating: Check with orig. forms and with pictures, if possible.
 

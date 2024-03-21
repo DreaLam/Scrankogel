@@ -20,13 +20,11 @@ library(tidyverse)
 ### Access to Access-DB  ;-)#
 #############################
  
-
+myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=V:/projects/SCHRANKOGEL/_Schrankogel_Gesamt/Schrankogel4Microclim_2024_03_19.accdb")
+#myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andrea/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
 #myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andreal/Documents/Projects/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
 #myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=E:/Schrankogel/Schrankogel_2023/Analysis/Schrankogel_4s/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
 #myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=X:/projects/SCHRANKOGEL/SCHRANKOGEL2023/Dateneingabe/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
-myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:/Users/andrea/Documents/Projekte/Microclim/Schrankogel_GLORIA_analyse/SCHRAN_1994_to_2023_MicroClim_v3.accdb")
-
-
 
 
 
@@ -37,11 +35,11 @@ myconn <-odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DB
 #myconn <-odbcConnect("Schrankogel_2023", uid="", pwd="")
 
 
-specAllSK <- sqlFetch(myconn, "lutSpecies") #opens connection in Access: tab with all species occur on Schrankogel and the year of first occurrence
-plotlist<- sqlFetch(myconn, "tabPlotsSurveys") # all head data per plot from SK, including top cover of surfaces
-spec <- sqlFetch(myconn, "tabSpeciesPlots") # all species in all plots of 2023, including cover
-lutPlots <- sqlFetch(myconn, "lutPlots") # different information about plots and there surveys
-PlotsDes <- sqlFetch(myconn, 'tabPlotsCategoryChanges') #flagged plots of 2023
+specAllSK <- sqlFetch(myconn, "mc_lutspecies") #opens connection in Access: tab with all species occur on Schrankogel and the year of first occurrence
+plotlist<- sqlFetch(myconn, "mc_tabPlotSurveys") # all head data per plot from SK, including top cover of surfaces
+spec <- sqlFetch(myconn, "mc_tabSpeciesplots") # all species in all plots of 2023, including cover
+lutPlots <- sqlFetch(myconn, "mc_lutPlots") # different information about plots and there surveys
+
 
 close(myconn)
 
@@ -54,18 +52,21 @@ str(spec)
 
 colnames(spec)[2] <- "year"
 #subset(spec , spec$ref_num < 1)       # use only plots with ref_num = 1 for analysis. However, in this database no other than 1 -> delete column cause it is not necessary
-spec <- spec[,-3]  ## remove column ref_num (anyway only ref 1 plots in the database)
 # for Gesamtschrankogel-DB: plotlist$plottyp != v (are 'Verdichtungsflächen')
-
+colnames(spec)[4] <- "species"
+colnames(spec)[1] <- "fl_num"
 
 colnames(plotlist)[2] <- "year"
-colnames(plotlist)[6] <- "date"
+colnames(plotlist)[1] <- "fl_num"
 
-spec$year <- as.factor(spec$year)
+spec$yearF <- as.factor(spec$year) ### for year as factor
 spec$fl_num <- as.factor(spec$fl_num)
 spec$species <- as.factor(spec$species)
-plotlist$year <- as.factor(plotlist$year)
+plotlist$yearF <- as.factor(plotlist$year)### for year as factor
 plotlist$fl_num <- as.factor(plotlist$fl_num)
+lutPlots$fl_num <- as.factor(lutPlots$fl_num)
+
+colnames(specAllSK)[4] <- "species"
 
 
 ###################################
@@ -73,8 +74,8 @@ plotlist$fl_num <- as.factor(plotlist$fl_num)
 ##################################
 
 #new species of 2023
-Sp23 <- specAllSK %>% filter(year == 2023) %>% select(species_code:Artname)  ### Attention. Some are new in 2023, althugh older in that list
-Sp23_new <- spec[,2:4] %>%  group_by(species, year)%>% summarise(cover = sum(cover)) %>% ungroup() %>%  group_by(species) %>% spread( year, cover) %>% ungroup()
+#Sp23 <- specAllSK %>% filter(year == 2023) %>% select(species_code:Artname)  ### Attention. Some are new in 2023, although older in that list
+Sp23_new <- spec[,c(2,4,5)] %>%  group_by(species, year)%>% summarise(cover = sum(cover)) %>% ungroup() %>%  group_by(species) %>% spread( year, cover) %>% ungroup()
 colnames(Sp23_new)[2] <- 'Y1994'
 colnames(Sp23_new)[3] <- 'Y2004'
 colnames(Sp23_new)[4] <- 'Y2014'
@@ -90,12 +91,12 @@ Sp23_new <- Sp23_new[,c(1,5,6)]  ### 15 new species
 Sp23nr <- merge(spec,Sp23_new, by = "species") %>% mutate(year.y = 1) %>% group_by(species) %>% summarize(number = sum(year.y))
 Sp23_new <- merge(Sp23_new,Sp23nr , by = "species")
 colnames(Sp23_new)[2] <- 'cover'
-Sp23_new <- merge(Sp23_new[,-3], SpecInfo[,1:2] , by = "species", all.x = T)
+Sp23_new <- merge(Sp23_new[,-3], specAllSK[,3:4] , by = "species", all.x = T)
 Sp23_new <- Sp23_new[,c(1,4,3,2)]
 
 
 write.table(Sp23_new, "../NewSpecies2023.csv", sep = ";" , row.names = F)
-rm(Sp23nr, Sp23, Sp23_new)
+rm(Sp23nr, Sp23_new)
 
 
 #####################################
@@ -103,7 +104,7 @@ rm(Sp23nr, Sp23, Sp23_new)
 #######################################
 
 #check number of plots surveyed in 2023
-plotlist %>%  filter(year == '2023') %>% count(!is.na(kartierer)|!is.na(date)) # 685 plots surveyed in 2023; no Plot in Plotlist without head info
+plotlist %>%  filter(year == '2023') %>% count(!is.na(researcher)|!is.na(date_survey)) # 685 plots surveyed in 2023; no Plot in Plotlist without head info
 
 
 ####################################
@@ -157,9 +158,8 @@ rm(SpNrPl23)
 
 rm(rarelist, rare23, rare)
   
-  # remove plots which were identified as real outliers: use therefor PlotsDes
+  # remove plots which were identified as real outliers: use therefor plot_changes_btw_94_23 in lutPlot
    ## the following where removed in 2014, because of a hugh stone first time in  in 2014: at the moment they are in with lots of spec.
 #spec <- droplevels(subset(spec , ! fl_num %in% c("110126" , "110226" , "110227" , "110127") & ! tr %in% "12"))
-# new removes?
-  
+# we decided, not to remove them this time!
   

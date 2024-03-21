@@ -1,30 +1,33 @@
 #### ANALYSE Richness change per plot ###
+## I used workspace Schrankogel23 to create this workspace SK23_richness
 library(stringr)
 library(tidyverse)
-library(plyr)
+#library(plyr)
 library(ggplot2)
 library(Matrix)
 library(lme4)
 library(emmeans)
 library(lsmeans)
+library(MASS)
 lsmeans <- lsmeans::lsmeans
 
+#detach(package:plyr) ### when tidyverse functions are not working
 
 ## A) richness per plot and year
-rich <- spec %>%  group_by(fl_num,year)  %>% summarise( n_spec = length(year)) %>% ungroup()
+rich <- spec %>%  group_by(fl_num, yearF, year) %>% summarise( n_spec = length(yearF)) %>% ungroup()
 ##test
 #richT <- spec %>% mutate(nr = 1) %>% aggregate(cbind(nr)~ +fl_num + year, sum)
 #richT <- merge(rich, richT) %>% mutate(test = n_spec - nr)  ### always 0
 #rm(richT)
 
 ## include empty plots
-rich <- merge(rich, PlotinfoYear[,c(1,2)], all = T)
+rich <- merge(rich, PlotinfoYear[,c(1,2,15)], all = T)
 rich <- rich %>% replace(is.na(.),0)
 
 
 ## include infos  
-rich <- merge(rich, Plotinfo[,c(1,3,4)], all.x = T)
-rich <- rich[,c(1,4,5,2,3)]
+rich <- merge(rich, Plotinfo, all.x = T)
+rich <- rich[,c(1,5,6,7,2,3,4)]
 
 write.table(rich , "../richness_per_plot_year.csv", sep = ";", row.names = F)
 
@@ -52,7 +55,7 @@ rich_mean_tr <-  ddply(rich2, c("tr", "year"), summarise,
 
 rich_mean_tr[,4:6] <- round(rich_mean_tr[,4:6], 2)
 colnames(rich_mean_tr)[6] <- 'SE'
-write.table(rich_mean_tr , "../rich2_mean_tr_RAW.csv", sep = ";", row.names = F)
+write.table(rich_mean_tr , "../rich4_mean_tr_RAW.csv", sep = ";", row.names = F)
 
 #plot(rich$year, rich$n_spec)
 #plot(rich_mean_tr$year, rich_mean_tr$mean)
@@ -72,15 +75,12 @@ rm(rich_mean_tr)
 
 
 ### C) Analyses
+## in Lamprecht et al. 2018: GLMM(glmmPQL) with Poisson distribution
 hist( rich4$n_spec , xlab= 'year', ylab = 'n_spec' )   ### beautiful GAUSS distribution
-
-rich4 <- rich4 %>% mutate(yearNr = as.numeric(year))
-rich4 <- rich4 %>% mutate(yearNR = as.numeric(paste(year)))
-
 
 ### Choose an error distribution and link function (e.g. Poisson distribution and log link for count data).
 glm_gaus<-glm(rich4$n_spec~1)
-glm_pois<-glm(rich4$n_spec~1, family = "poisson")  ## lot of warnings.
+glm_pois<-glm(rich4$n_spec~1, family = "poisson") 
 #glm_nb <- glm.nb(rich4$n_spec~1) ## lot of warnings.
 #glm_gamma <- glm(rich4$n_spec~1, family = "Gamma") ## non-positive values not allowed for the 'Gamma' family
 
@@ -88,27 +88,64 @@ glm_pois<-glm(rich4$n_spec~1, family = "poisson")  ## lot of warnings.
 par(mfrow=c(3,4))
 plot(glm_gaus, main="gaussian")  
 plot(glm_pois, main="poisson")
-plot(glm_nb, main="neg.bin")
+#plot(glm_nb, main="neg.bin")
 AIC(glm_gaus, glm_pois)  ### lower for gauss
 
 rm(glm_gaus,glm_pois)
 
-rich_Y <- lmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4)
-rich_Y_P <- glmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4, family = poisson())
-anova(rich_Y,rich_Y_P)   ### AIC is lower with gauss
+rich_Y <- lmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = rich4)
+rich_Y_P <- glmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = rich4, family = poisson())
+rich_Y_P_PQL <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = rich4, family = poisson())
+anova(rich_Y,rich_Y_P, rich_Y_P_PQL )   ### AIC is lower with gauss
 summary(rich_Y)
+
 # numeric year
-rich_Yn <- lmer(n_spec ~ yearNr +  (1 |block/tr/fl_num), data = rich4)
-rich_YN <- lmer(n_spec ~ yearNR +  (1 |block/tr/fl_num), data = rich4)
-rich_Y_Pn <- glmer(n_spec ~ yearNr +  (1 |block/tr/fl_num), data = rich4, family = poisson())
-anova(rich_Yn,rich_YN, rich_Y_Pn)   ### AIC is lower with gauss
-summary(rich_Yn)
-summary(rich_YN)
-anova(rich_YN)
-anova(rich_Y)
+#rich_Yn <- lmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4)
+#rich_YN <- lmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4)
+#rich_Y_Pn <- glmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4, family = poisson())
+#anova(rich_Yn,rich_YN, rich_Y_Pn)   ### AIC is lower with gauss
+#summary(rich_Yn)
+#summary(rich_YN)
+#anova(rich_YN)
+#anova(rich_Y)
 
-rich_Y_emmeans <- pairs(emmeans(rich_Y, ~year))
+rich_Y_emmeans <- pairs(emmeans(rich_Y, ~yearF))
 rich_Y_emmeans<-as.data.frame(rich_Y_emmeans)
-plot(emmeans(rich_Y, ~year), comparisons = TRUE)
+plot(emmeans(rich_Y, ~yearF), comparisons = TRUE)
+dev.off()
+
+## incl. altiranks  ### ATTENTION: NO USEFUL MODEL YET!
+## in Lamprecht et al. 2018: GLMM(glmmPQL) with negative binomial distribution
+richAlti <- merge(spec, SpecInfo[,c(4,6)])
+detach(package:plyr) ### when tidyverse functions are not working
+richAlti <-richAlti %>%   group_by(fl_num, yearF, year, alti_rank) %>% summarise( n_spec = length(yearF)) %>% ungroup()
+##test
+#richT <- spec %>% mutate(nr = 1) %>% aggregate(cbind(nr)~ +fl_num + year, sum)
+#richT <- merge(rich, richT) %>% mutate(test = n_spec - nr)  ### always 0
+#rm(richT)
+
+## include empty plots
+richAlti <- merge(richAlti, PlotinfoYear[,c(1,2,15)], all = T)
+richAlti <- richAlti %>% replace(is.na(.),0)
 
 
+## include infos  
+richAlti <- merge(richAlti, Plotinfo, all.x = T)
+richAlti <- richAlti[,c(1,6,7,8,2,3,4,5)]
+
+write.table(richAlti , "../richness_per_plot_year_altirank.csv", sep = ";", row.names = F)
+
+richAlti4 <- richAlti %>%  filter(fl_num %in% levels(dat4$fl_num))
+richAlti4 <- droplevels(richAlti4)
+str(richAlti4)  ###355 plots
+
+richAlti4$alti_rankF <- as.factor(richAlti4$alti_rank)
+
+rich_YA <- lmer(n_spec ~ yearF*alti_rankF +  (1 |block/tr/fl_num), data = richAlti4)
+rich_Y_PA <- glmer(n_spec ~ yearF*alti_rankF +  (1 |block/tr/fl_num), data = richAlti4, family = poisson())
+rich_Y_P_PQLA <- glmmPQL(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = poisson())
+rich_Y_nb_PQLA <- glmmPQL(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = neg.bin())
+anova(rich_YA,rich_Y_PA, rich_Y_P_PQLA )   ### AIC is lower with gauss
+summary(rich_YA)
+summary(rich_Y_PA)
+summary(rich_Y_PQLA)

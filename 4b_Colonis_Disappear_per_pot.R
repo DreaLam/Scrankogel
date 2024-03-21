@@ -1,4 +1,5 @@
 #### ANALYSE Colonisations and disappearances per plot ###
+## I used workspace Schrankogel23 to create this workspace SK23_codi
 library(stringr)
 library(tidyverse)
 #library(plyr)
@@ -16,7 +17,7 @@ spec0 <- merge(spec , PlotinfoYear[,c(1,2)], all = T)  ### to add 0
 spec0$cover <- spec0$cover %>% replace(is.na(.), 0) 
 
 
-colo <- spec0[,-5] %>% group_by(fl_num,species) %>% spread(year, cover)
+colo <- spec0[,-c(3,6:8)] %>% group_by(fl_num,species) %>% spread(year, cover)
 colo[,3:6] <- colo[,3:6] %>% replace(is.na(.),0)
 str(colo)
 colnames(colo)[-c(1,2)] <- paste0("Y", colnames(colo)[-c(1,2)])
@@ -32,7 +33,7 @@ colo <- colo %>% mutate(P9423 = ifelse((Y2023 > 0 & Y1994 == 0), 1,0))
 colo <- colo %>% mutate(type = 'colo')
 
 ## Disappearance: number of species per plot absent at the time of the resurvey, present in the respective plot at the previous survey.
-disa <- spec0[,-5] %>% group_by(fl_num,species) %>% spread(year, cover)
+disa <- spec0[,-c(3,6:8)] %>% group_by(fl_num,species) %>% spread(year, cover)
 disa[,3:6] <- disa[,3:6] %>% replace(is.na(.),0)
 str(disa)
 colnames(disa)[-c(1,2)] <- paste0("Y", colnames(disa)[-c(1,2)])
@@ -54,25 +55,26 @@ codi <- codi %>% group_by(fl_num, type) %>% summarise(p9404=sum(P9404), p0414 = 
 str(codi)
 codi$type <- as.factor(codi$type)
 
-codi <- merge(codi, Plotinfo[,c(1,3,4)], all.x = T)
-codi <- codi[,c(1,8,9,2:7)]
+codi <- merge(codi, Plotinfo, all.x = T)
+codi <- codi[,c(1,8,9,10,2:7)]
 
 
 codi4 <-  codi %>% filter(fl_num %in% levels(dat4$fl_num))
 codi4 <- droplevels(codi4)
-codi4 <- codi4[,-c(8,9)]
+codi4 <- codi4[,-c(9,10)]
 str(codi4)
 codi4 <- codi4 %>%  gather(key='period', value = 'number', p9404:p1423)
   
 
 codi3 <-  codi %>% filter(fl_num %in% levels(dat3$fl_num) )
 codi3 <- droplevels(codi3)
-codi3 <- codi3[,c(1:4,8,7)]
+codi3 <- codi3[,c(1:5,9,8)]
 str(codi3)  ### all 661, including always empty plots
+codi3 <- codi3 %>%  gather(key='period', value = 'number', p9414:p1423)
 
 codi2 <-  codi %>% filter(fl_num %in% levels(dat2$fl_num) )
 codi2 <- droplevels(codi2)
-codi2 <- codi2[-c(5:8)]
+codi2 <- codi2[-c(6:9)]
 str(codi2)  ### all 863, including always empty plots
 
 
