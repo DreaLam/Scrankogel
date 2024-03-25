@@ -109,11 +109,18 @@ ggplot(codi_mean_tr[codi_mean_tr$type =='disa',],  aes(x=period, y=mean,  colour
   geom_errorbar(aes(ymin=mean-SE, ymax=mean+SE), width=.2) +
   ylab ("Disa tr and period (mean +/- SE)") +
   ggtitle("Disappearances, raw") +
-  theme_bw() +
+  theme_bw()  +
   ggsave("./../plots_graphs/disa4_mean_tr_years_raw.tiff")
 
+codi_mean_tr <-  ddply(codi2, c("tr", 'type'), summarise,
+                       N    = length(p9423),
+                       mean = mean(p9423),
+                       sd   = sd(p9423),
+                       se   = sd / sqrt(N)
+)
+### plot makes no sense for codi2
 
-
+rm(codi_mean_tr)
 
 
 ## C) mean colo per period: RAW -----------
@@ -148,10 +155,18 @@ ggplot(codi_mean_tr[codi_mean_tr$type =='disa',],  aes(x=period, y=mean,  colour
     ggsave("./../plots_graphs/disa4_mean_period_raw.tiff")
   
   
+  codi_mean <-  ddply(codi2, c( 'type'), summarise,
+                      N    = length(p9423),
+                      mean = mean(p9423),
+                      sd   = sd(p9423),
+                      se   = sd / sqrt(N)
+  )
   
-  
-  rm(codi_mean, codi_mean_tr)
+  rm(codi_mean)
 
+  
+  ## write table for codi_means
+  ## do the same block-wise, not tr wise
 
 
 
