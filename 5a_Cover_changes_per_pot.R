@@ -1,5 +1,5 @@
 #### ANALYSE COVER CHANGE PER PLOT
-
+## I used workspace Schrankogel23 to create this workspace SK23_cover
 #library(Matrix)
 #library(lme4)
 library(plyr)
@@ -40,7 +40,7 @@ str(specCov2)  ### 683 plots
 ggplot(specCov4, aes(x=covSum)) + geom_histogram(binwidth=.5)  ### right-skewed distribution
 
 
-## B) mean cover per tr and year: RAW -----------
+## B) mean cover per transect and year: RAW -----------
 library(plyr)
 cov_mean_tr <-  ddply(specCov4, c("tr", "year"), summarise,
                        N    = length(covSum),
@@ -63,6 +63,35 @@ ggplot(cov_mean_tr,  aes(x=year, y=mean,  colour= tr)) +
   ggsave("./../plots_graphs/cover4_mean_tr_years_raw.tiff")
 
 rm(cov_mean_tr)
+
+
+### mean cover per block and year: RAW -----------
+cov_mean_bl <-  ddply(specCov4, c("block", "year"), summarise,
+                      N    = length(covSum),
+                      mean = mean(covSum),
+                      sd   = sd(covSum),
+                      se   = sd / sqrt(N)
+)
+
+cov_mean_bl[,4:6] <- round(cov_mean_bl[,4:6], 2)
+colnames(cov_mean_bl)[6] <- 'SE'
+
+write.table(cov_mean_bl,"../cover4_mean_block.csv", sep = ";", row.names = F)
+
+cov_mean_bl$yearN <- as.numeric(substr(cov_mean_bl$year,1,4))  ## lines between points are only possible when year is numeric
+
+ggplot(cov_mean_bl,  aes(x=yearN, y=mean,  colour= block)) +
+  geom_point(size=2 )+ 
+  geom_line(lty = 2) + 
+  scale_colour_brewer(palette="Set2") +
+  geom_errorbar(aes(ymin=mean-SE, ymax=mean+SE), width=.2) +
+  ylab ("Cover sum (dm², mean +/- SE)") +
+  ggtitle("Species cover per block, raw") +
+  theme_bw() +
+  ggsave("./../plots_graphs/cover4_mean_block_years_raw.tiff")
+
+rm(cov_mean_bl)
+
 ## C) mean cover per year: RAW -----------
 cov_mean <-  ddply(specCov4, 'year', summarise,
                       N    = length(covSum),
@@ -79,8 +108,8 @@ ggplot(cov_mean,  aes(x=year, y=mean)) +
   geom_line(lty = 2) +
   scale_colour_brewer(palette="Set2") +
   geom_errorbar(aes(ymin=mean-SE, ymax=mean+SE), width=.2) +
-  ylab ("Species cover per plot (mean +/- SE)") +
-  ggtitle("plots, raw") +
+  ylab ("Cover sum (dm², mean +/- SE)") +
+  ggtitle("Species cover per survey, raw") +
   theme_bw() +
   ggsave("./../plots_graphs/cover4_mean_years_raw.tiff")
 
@@ -90,7 +119,7 @@ rm(cov_mean)
 #########
 #########
 ### D) Analyses
-
+## in Lamprecht et al. 2018: LMM(lmer)
 hist( specCov4$covSum , xlab = 'year',  ylab='covSum')   ### absolutely right skewed
 
 glm_gaus<-glm(specCov4$covSum~1)
@@ -105,29 +134,30 @@ plot(glm_pois, main="poisson")
 plot(glm_nb, main="neg.bin")
 AIC(glm_gaus, glm_pois, glm_nb)  ### lowest nb
 
-cover_Y <- glm.nb(covSum ~ year  + (1|block/tr/fl_num),  data = specCov4 )   ### lots of warnings
+cover_Y <- lmer(covSum ~ year +  (1 |block/tr/fl_num), data = specCov4) ### boundary (singular) fit: model did fit, but it generated that warning because random effects are very small. 
+cover_Y_P <- glmer(covSum ~ year +  (1 |block/tr/fl_num), data = specCov4, family = poisson())  ## warnings
+cover_Y_P_PQL <- glmmPQL(covSum ~ year,~ 1 |block/tr/fl_num, data = specCov4, family = poisson()) ## warnings
+cover_nb <- glmer.nb(covSum ~ year + (1|block/tr/fl_num) , data=specCov4)  ## warnings
+anova(cover_Y,cover_Y_P, cover_Y_P_PQL , cover_nb)   ### AIC is lowest nb, however, only with gauss no warnings
 summary(cover_Y)
-plot(cover_Y)
+summary(cover_nb)
+plot(cover_Y)  ### seems to be quite OK
+plot(cover_nb)
 
 cover_Y_emmeans <- pairs(emmeans(cover_Y, ~year, data = specCov4))
 cover_Y_emmeans<-as.data.frame(cover_Y_emmeans)
-plot(emmeans(cover_Y, ~year, data = specCov4), comparisons = TRUE)
+#plot(emmeans(cover_Y, ~year, data = specCov4), comparisons = TRUE)
 
-## same with GAUSS:
-cover_Y <- lmer(covSum ~ year  + (1|block/tr/fl_num),  data = specCov4 )   ### boundary (singular) fit: model did fit, but it generated that warning because random effects are very small. 
-summary(cover_Y)
-
-cover_Y_emmeans <- pairs(emmeans(cover_Y, ~year, data = specCov4))
-cover_Y_emmeans<-as.data.frame(cover_Y_emmeans)
 cover_Y_emmeans[,2:3] <- round(cover_Y_emmeans[,2:3], 2)
 cover_Y_emmeans[,5:6] <- round(cover_Y_emmeans[,5:6], 4)
-plot(emmeans(cover_Y, ~year, data = specCov4), comparisons = TRUE)
+cover_Y_emmeans$mod <- 'lmer'
+cover_Y_emmeans$type <- 'cover'
 
-plot(cover_Y) ### seems to be quite OK?
 
-write.table(cover_Y_emmeans, "../cover_Y_emmeamsGauss.csv", sep = ";" , row.names = F)
+write.table(cover_Y_emmeans, "../model_cover4_emmeams.csv", sep = ";" , row.names = F)
 
-## not the same p-values as in Lamrprecht 2018 for first 3 years! test without 2023   
+
+## not the same p-values as in Lamprecht 2018 for first 3 years! test without 2023   
 specCov4_3 <- specCov4 %>% filter(year != '2023')
   
 test <- lmer(covSum ~ year  + (1|block/tr/fl_num),  data = specCov4_3 )   ### lots of warnings

@@ -44,7 +44,7 @@ rich2 <- droplevels(rich2)
 str(rich2) ## 683 plots
 
 
-## B) mean richness per TR and year: RAW -----------
+## B) mean richness per tranesct and year: RAW -----------
 library(plyr)
 rich_mean_tr <-  ddply(rich2, c("tr", "year"), summarise,
                        N    = length(n_spec),
@@ -72,7 +72,57 @@ ggplot(rich_mean_tr,  aes(x=year, y=mean,  colour= tr)) +
 
 rm(rich_mean_tr)
 
+##mean richness per block and year: RAW -----------
+ 
+rich_mean_bl <-  ddply(rich4, c("block", "year"), summarise,
+                       N    = length(n_spec),
+                       mean = mean(n_spec),
+                       sd   = sd(n_spec),
+                       se   = sd / sqrt(N)
+)
 
+rich_mean_bl[,4:6] <- round(rich_mean_bl[,4:6], 2)
+colnames(rich_mean_bl)[6] <- 'SE'
+write.table(rich_mean_bl , "../rich4_mean_block_RAW.csv", sep = ";", row.names = F)
+
+#plot(rich$year, rich$n_spec)
+#plot(rich_mean_tr$year, rich_mean_tr$mean)
+
+ggplot(rich_mean_bl,  aes(x=year, y=mean,  colour= block)) +
+  geom_point(size=2 )+
+  geom_line(lty = 2) +
+  scale_colour_brewer(palette="Set2") +
+  geom_errorbar(aes(ymin=mean-SE, ymax=mean+SE), width=.2) +
+  ylab ("Species richness per plot (mean +/- SE)") +
+  ggtitle("Richness per block, raw") +
+  theme_bw()  +
+  ggsave("./../plots_graphs/richness4_mean_block_years_raw.tiff")      
+
+
+rm(rich_mean_bl)
+
+## rich mean per year
+rich_mean <-  ddply(rich4, c("year"), summarise,
+                       N    = length(n_spec),
+                       mean = mean(n_spec),
+                       sd   = sd(n_spec),
+                       se   = sd / sqrt(N)
+)
+
+rich_mean[,3:5] <- round(rich_mean[,3:5], 2)
+colnames(rich_mean)[5] <- 'SE'
+write.table(rich_mean , "../rich4_mean_RAW.csv", sep = ";", row.names = F)
+
+ggplot(rich_mean,  aes(x=year, y=mean)) +
+  geom_point(size=2 )+
+  scale_colour_brewer(palette="Set2") +
+  geom_errorbar(aes(ymin=mean-SE, ymax=mean+SE), width=.2) +
+  ylab ("Number of species richness (mean +/- SE)") +
+  ggtitle("Species richness per survey, raw") +
+  theme_bw() +
+  ggsave("./../plots_graphs/richness4_mean_years_raw.tiff")      
+
+rm(rich_mean)
 
 ### C) Analyses
 ## in Lamprecht et al. 2018: GLMM(glmmPQL) with Poisson distribution
@@ -113,6 +163,13 @@ rich_Y_emmeans <- pairs(emmeans(rich_Y, ~yearF))
 rich_Y_emmeans<-as.data.frame(rich_Y_emmeans)
 plot(emmeans(rich_Y, ~yearF), comparisons = TRUE)
 dev.off()
+
+rich_Y_emmeans[,2:3] <- round(rich_Y_emmeans[,2:3], 2)
+rich_Y_emmeans[,5:6] <- round(rich_Y_emmeans[,5:6], 4)
+rich_Y_emmeans$mod <- 'lmer'
+rich_Y_emmeans$type <- 'richness'
+
+write.table(rich_Y_emmeans,"../model_rich4_emmeans.csv", sep = ";", row.names = F)
 
 ## incl. altiranks  ### ATTENTION: NO USEFUL MODEL YET!
 ## in Lamprecht et al. 2018: GLMM(glmmPQL) with negative binomial distribution
