@@ -10,6 +10,7 @@ library(emmeans)
 library(lsmeans)
 library(MASS)
 lsmeans <- lsmeans::lsmeans
+library(glmmTMB)
 
 #detach(package:plyr) ### when tidyverse functions are not working
 
@@ -148,6 +149,10 @@ rich_Y_P <- glmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = rich4, family =
 rich_Y_P_PQL <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = rich4, family = poisson())
 anova(rich_Y,rich_Y_P, rich_Y_P_PQL )   ### AIC is lower with gauss
 summary(rich_Y)
+plot(rich_Y)   ### seems OK 
+## same as:  plot(fitted(rich_Y),residuals(rich_Y))
+qqnorm(residuals(rich_Y))
+qqline(residuals(rich_Y))  ### quite nice
 
 # numeric year
 #rich_Yn <- lmer(n_spec ~ year +  (1 |block/tr/fl_num), data = rich4)
@@ -181,7 +186,7 @@ richAlti <-richAlti %>%   group_by(fl_num, yearF, year, alti_rank) %>% summarise
 #richT <- merge(rich, richT) %>% mutate(test = n_spec - nr)  ### always 0
 #rm(richT)
 
-## include empty plots
+## include empty plots: altirank would be 0!!
 richAlti <- merge(richAlti, PlotinfoYear[,c(1,2,15)], all = T)
 richAlti <- richAlti %>% replace(is.na(.),0)
 
@@ -198,11 +203,138 @@ str(richAlti4)  ###355 plots
 
 richAlti4$alti_rankF <- as.factor(richAlti4$alti_rank)
 
-rich_YA <- lmer(n_spec ~ yearF*alti_rankF +  (1 |block/tr/fl_num), data = richAlti4)
-rich_Y_PA <- glmer(n_spec ~ yearF*alti_rankF +  (1 |block/tr/fl_num), data = richAlti4, family = poisson())
-rich_Y_P_PQLA <- glmmPQL(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = poisson())
-rich_Y_nb_PQLA <- glmmPQL(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = neg.bin())
-anova(rich_YA,rich_Y_PA, rich_Y_P_PQLA )   ### AIC is lower with gauss
-summary(rich_YA)
-summary(rich_Y_PA)
-summary(rich_Y_PQLA)
+## mean richness per Alti and year
+library(plyr)
+rich_meanA <-  ddply(richAlti4, c("year",'alti_rank'), summarise,
+                    N    = length(n_spec),
+                    mean = mean(n_spec),
+                    sd   = sd(n_spec),
+                    se   = sd / sqrt(N)
+)
+
+rich_meanA[,4:6] <- round(rich_meanA[,4:6], 2)
+colnames(rich_meanA)[6] <- 'SE'
+write.table(rich_meanA , "../rich4_mean_Alti_RAW.csv", sep = ";", row.names = F)
+
+
+
+
+rich_YA <- lmer(n_spec ~ yearF*alti_rankF +  (1 |block/tr/fl_num), data = richAlti4)  
+### fixed-effect model matrix is rank deficient so dropping 2 columns / coefficients
+## That indicates that there is perfect multicollinearity or linear dependency among the predictor variables in your model, 
+##leading to the rank deficiency of the fixed-effect model matrix. In other words, the predictors in your model are not linearly independent, 
+##which can cause issues with estimation and interpretation.
+### Maybe use separate models per AR?
+rich_Y_PA <- glmer(n_spec ~ yearF*alti_rankF +  (1 |block/tr/fl_num), data = richAlti4, family = poisson())  ## same message
+rich_Y_P_PQLA <- glmmPQL(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = poisson())   ### FEHLER
+rich_Y_nb_PQLA <- glmmPQL(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = neg.bin()) ### Fehler in neg.bin() : 'theta' muss angegeben sein
+rich_Y_nb_TMB <- glmmTMB(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = neg.bin()) ###Fehler in neg.bin() : 'theta' must be given
+## for negative binomial models with random effects
+rich_Y_nb_TMB <- glmmTMB(n_spec ~ yearF*alti_rankF,~ 1 |block/tr/fl_num, data = richAlti4, family = nbinom2())
+## Warnings
+
+## try with separate ARs:
+## AR1
+rich_YA1 <- lmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 1, ])  
+rich_Y_PA1 <- glmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 1, ], family = poisson())  
+rich_Y_P_PQLA1 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 1, ], family = poisson())   
+rich_Y_nb_PQLA1 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 1, ], family = neg.bin()) 
+rich_Y_nb_TMBA1 <- glmmTMB(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 1, ], family = nbinom2())
+anova(rich_YA1, rich_Y_PA1, rich_Y_P_PQLA1)  ### lowest with GAUSS
+
+summary(rich_YA1)
+plot(rich_YA1)
+qqnorm(residuals(rich_YA1))
+qqline(residuals(rich_YA1))
+
+
+rich_YA1_emmeans <- pairs(emmeans(rich_YA1, ~yearF))
+rich_YA1_emmeans<-as.data.frame(rich_YA1_emmeans)
+plot(emmeans(rich_YA1, ~yearF), comparisons = TRUE)
+dev.off()
+
+rich_YA1_emmeans[,2:3] <- round(rich_YA1_emmeans[,2:3], 2)
+rich_YA1_emmeans[,5:6] <- round(rich_YA1_emmeans[,5:6], 4)
+rich_YA1_emmeans$mod <- 'lmer'
+rich_YA1_emmeans$type <- 'richness_alti1'
+
+write.table(rich_YA1_emmeans , "../model_rich4_alti1_emmeans.csv", sep = ";", row.names = F)
+
+## AR2
+rich_YA2 <- lmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 2, ])  
+rich_Y_PA2 <- glmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 2, ], family = poisson())  
+rich_Y_P_PQLA2 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 2, ], family = poisson())   
+rich_Y_nb_PQLA2 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 2, ], family = neg.bin()) 
+rich_Y_nb_TMBA2 <- glmmTMB(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 2, ], family = nbinom2())
+anova(rich_YA2, rich_Y_PA2, rich_Y_P_PQLA2)  ### lowest with GAUSS
+
+summary(rich_YA2)
+plot(rich_YA2)
+qqnorm(residuals(rich_YA2))
+qqline(residuals(rich_YA2))
+
+
+rich_YA2_emmeans <- pairs(emmeans(rich_YA2, ~yearF))
+rich_YA2_emmeans<-as.data.frame(rich_YA2_emmeans)
+plot(emmeans(rich_YA2, ~yearF), comparisons = TRUE)
+dev.off()
+
+rich_YA2_emmeans[,2:3] <- round(rich_YA2_emmeans[,2:3], 2)
+rich_YA2_emmeans[,5:6] <- round(rich_YA2_emmeans[,5:6], 4)
+rich_YA2_emmeans$mod <- 'lmer'
+rich_YA2_emmeans$type <- 'richness_alti2'
+
+write.table(rich_YA2_emmeans , "../model_rich4_alti2_emmeans.csv", sep = ";", row.names = F)
+
+
+##AR3
+rich_YA3 <- lmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 3, ])  
+rich_Y_PA3 <- glmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 3, ], family = poisson())  
+rich_Y_P_PQLA3 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 3, ], family = poisson())   
+rich_Y_nb_PQLA3 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 3, ], family = neg.bin()) 
+rich_Y_nb_TMBA3 <- glmmTMB(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 3, ], family = nbinom2())
+anova(rich_YA3, rich_Y_PA3, rich_Y_P_PQLA3)  ### lowest with GAUSS
+
+summary(rich_YA3)
+plot(rich_YA3)
+qqnorm(residuals(rich_YA3))
+qqline(residuals(rich_YA3))
+
+
+rich_YA3_emmeans <- pairs(emmeans(rich_YA3, ~yearF))
+rich_YA3_emmeans<-as.data.frame(rich_YA3_emmeans)
+plot(emmeans(rich_YA3, ~yearF), comparisons = TRUE)
+dev.off()
+
+rich_YA3_emmeans[,2:3] <- round(rich_YA3_emmeans[,2:3], 2)
+rich_YA3_emmeans[,5:6] <- round(rich_YA3_emmeans[,5:6], 4)
+rich_YA3_emmeans$mod <- 'lmer'
+rich_YA3_emmeans$type <- 'richness_alti3'
+
+write.table(rich_YA3_emmeans , "../model_rich4_alti3_emmeans.csv", sep = ";", row.names = F)
+
+## AR4
+rich_YA4 <- lmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 4, ])  ### warning, maybe to less data
+rich_Y_PA4 <- glmer(n_spec ~ yearF +  (1 |block/tr/fl_num), data = richAlti4[richAlti4$alti_rank == 4, ], family = poisson())  
+rich_Y_P_PQLA4 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 4, ], family = poisson())   
+rich_Y_nb_PQLA4 <- glmmPQL(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 4, ], family = neg.bin()) 
+rich_Y_nb_TMBA4 <- glmmTMB(n_spec ~ yearF,~ 1 |block/tr/fl_num, data = richAlti4[richAlti4$alti_rank == 4, ], family = nbinom2())
+anova(rich_YA4, rich_Y_PA4, rich_Y_P_PQLA4)  ### lowest with GAUSS
+
+summary(rich_YA4)
+plot(rich_YA4)
+qqnorm(residuals(rich_YA4))
+qqline(residuals(rich_YA4))
+
+
+rich_YA4_emmeans <- pairs(emmeans(rich_YA4, ~yearF))
+rich_YA4_emmeans<-as.data.frame(rich_YA4_emmeans)
+plot(emmeans(rich_YA4, ~yearF), comparisons = TRUE)
+dev.off()
+
+rich_YA4_emmeans[,2:3] <- round(rich_YA4_emmeans[,2:3], 2)
+rich_YA4_emmeans[,5:6] <- round(rich_YA4_emmeans[,5:6], 4)
+rich_YA4_emmeans$mod <- 'lmer'
+rich_YA4_emmeans$type <- 'richness_alti4'
+
+write.table(rich_YA4_emmeans , "../model_rich4_alti4_emmeans.csv", sep = ";", row.names = F)
